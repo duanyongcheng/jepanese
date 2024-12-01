@@ -1,101 +1,116 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from "react";
+import { GOJUON_DATA, GOJUON_ROWS } from "@/data/gojuon";
+
+// Add this type near the top of the file
+type GojuonRow = keyof typeof GOJUON_ROWS;
+type GojuonSound = keyof typeof GOJUON_DATA;
+
+// 添加发音函数
+const speak = (text: string) => {
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = "ja-JP";
+  window.speechSynthesis.speak(utterance);
+};
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [selectedRows, setSelectedRows] = useState<GojuonRow[]>([]);
+  const [shuffledSounds, setShuffledSounds] = useState<GojuonSound[]>([]);
+  const [revealedCards, setRevealedCards] = useState<Set<string>>(new Set());
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  // 选择行的处理函数
+  const handleRowSelect = (row: GojuonRow) => {
+    setSelectedRows((prev) =>
+      prev.includes(row) ? prev.filter((r) => r !== row) : [...prev, row]
+    );
+  };
+
+  // 开始练习
+  const startPractice = () => {
+    const sounds = selectedRows.flatMap(
+      (row) => GOJUON_ROWS[row]
+    ) as GojuonSound[];
+    setShuffledSounds(shuffleArray(sounds));
+    setRevealedCards(new Set());
+  };
+
+  // 修改卡片点击处理函数
+  const revealCard = (sound: GojuonSound) => {
+    if (revealedCards.has(sound)) {
+      // 如果卡片已经翻开，则播放发音
+      speak(GOJUON_DATA[sound].hiragana);
+    } else {
+      // 否则翻开卡片
+      setRevealedCards((prev) => new Set(prev).add(sound));
+    }
+  };
+
+  return (
+    <div className="min-h-screen p-8 dark:bg-gray-900 dark:text-white">
+      <main className="max-w-4xl mx-auto">
+        {/* 行选择 */}
+        <div className="mb-8">
+          <h2 className="text-xl mb-4">选择要练习的行：</h2>
+          <div className="flex flex-wrap gap-2">
+            {Object.keys(GOJUON_ROWS).map((row) => (
+              <button
+                key={row}
+                onClick={() => handleRowSelect(row as GojuonRow)}
+                className={`px-4 py-2 rounded ${
+                  selectedRows.includes(row as GojuonRow)
+                    ? "bg-blue-500 text-white"
+                    : "bg-gray-200 dark:bg-gray-700"
+                }`}
+              >
+                {row}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* 开始练习按钮 */}
+        <button
+          onClick={startPractice}
+          className="mb-8 px-6 py-3 bg-green-500 text-white rounded hover:bg-green-600"
+          disabled={selectedRows.length === 0}
+        >
+          开始练习
+        </button>
+
+        {/* 练习区域 */}
+        <div className="grid grid-cols-3 sm:grid-cols-5 gap-4">
+          {shuffledSounds.map((sound) => (
+            <div
+              key={sound}
+              onClick={() => revealCard(sound)}
+              className="aspect-square border rounded flex items-center justify-center cursor-pointer dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800"
+            >
+              {revealedCards.has(sound) ? (
+                <div className="text-center">
+                  <div className="text-2xl">{GOJUON_DATA[sound].hiragana}</div>
+                  <div className="text-xl">{GOJUON_DATA[sound].katakana}</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    {GOJUON_DATA[sound].romaji}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-xl">{GOJUON_DATA[sound].romaji}</div>
+              )}
+            </div>
+          ))}
         </div>
       </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
     </div>
   );
+}
+
+// 数组随机排序函数
+function shuffleArray<T>(array: T[]): T[] {
+  const newArray = [...array];
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+  }
+  return newArray;
 }
