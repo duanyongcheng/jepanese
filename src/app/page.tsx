@@ -7,11 +7,11 @@ import { GOJUON_DATA, GOJUON_ROWS } from "@/data/gojuon";
 type GojuonRow = keyof typeof GOJUON_ROWS;
 type GojuonSound = keyof typeof GOJUON_DATA;
 
-// 添加发音函数
-const speak = (text: string) => {
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = "ja-JP";
-  window.speechSynthesis.speak(utterance);
+// 修改发音函数
+const speak = (sound: GojuonSound) => {
+  const hiragana = GOJUON_DATA[sound].hiragana;
+  const audio = new Audio(`/audio/${hiragana}.mp3`);
+  audio.play().catch((err) => console.error("Error playing audio:", err));
 };
 
 export default function Home() {
@@ -39,7 +39,7 @@ export default function Home() {
   const revealCard = (sound: GojuonSound) => {
     if (revealedCards.has(sound)) {
       // 如果卡片已经翻开，则播放发音
-      speak(GOJUON_DATA[sound].hiragana);
+      speak(sound);
     } else {
       // 否则翻开卡片
       setRevealedCards((prev) => new Set(prev).add(sound));
