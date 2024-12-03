@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { GOJUON_DATA, GOJUON_ROWS } from "@/data/gojuon";
+import Link from "next/link";
 
 // Add this type near the top of the file
 type GojuonRow = keyof typeof GOJUON_ROWS;
@@ -49,6 +50,12 @@ export default function Home() {
   return (
     <div className="min-h-screen p-8 dark:bg-gray-900 dark:text-white">
       <main className="max-w-4xl mx-auto">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-2xl font-bold">假名练习</h1>
+          <Link href="/gojuon" className="text-blue-500 hover:text-blue-600">
+            查看五十音图
+          </Link>
+        </div>
         {/* 行选择 */}
         <div className="mb-8">
           <h2 className="text-xl mb-4">选择要练习的行：</h2>
