@@ -51,7 +51,9 @@ export const GOJUON_DATA = {
 
   // や行
   ya: { hiragana: "や", katakana: "ヤ", romaji: "ya", audio: "/audio/や.mp3" },
+  yi: { hiragana: "", katakana: "", romaji: "", audio: "" },
   yu: { hiragana: "ゆ", katakana: "ユ", romaji: "yu", audio: "/audio/ゆ.mp3" },
+  ye: { hiragana: "", katakana: "", romaji: "", audio: "" },
   yo: { hiragana: "よ", katakana: "ヨ", romaji: "yo", audio: "/audio/よ.mp3" },
 
   // ら行
@@ -63,7 +65,14 @@ export const GOJUON_DATA = {
 
   // わ行
   wa: { hiragana: "わ", katakana: "ワ", romaji: "wa", audio: "/audio/わ.mp3" },
+  wi: { hiragana: "", katakana: "", romaji: "", audio: "" },
+  wu: { hiragana: "", katakana: "", romaji: "", audio: "" },
+  we: { hiragana: "", katakana: "", romaji: "", audio: "" },
   wo: { hiragana: "を", katakana: "ヲ", romaji: "wo", audio: "/audio/を.mp3" },
+  "1": { hiragana: "", katakana: "", romaji: "", audio: "" },
+  "2": { hiragana: "", katakana: "", romaji: "", audio: "" },
+  "3": { hiragana: "", katakana: "", romaji: "", audio: "" },
+  "4": { hiragana: "", katakana: "", romaji: "", audio: "" },
   n: { hiragana: "ん", katakana: "ン", romaji: "n", audio: "/audio/ん.mp3" },
 };
 
@@ -76,9 +85,10 @@ export const GOJUON_ROWS = {
   な行: ["na", "ni", "nu", "ne", "no"],
   は行: ["ha", "hi", "fu", "he", "ho"],
   ま行: ["ma", "mi", "mu", "me", "mo"],
-  や行: ["ya", "yu", "yo"],
+  や行: ["ya", "yi", "yu", "ye", "yo"],
   ら行: ["ra", "ri", "ru", "re", "ro"],
-  わ行: ["wa", "wo", "n"],
+  わ行: ["wa", "wi", "wu", "we", "wo"],
+  ん: ["1", "2  ", "3", "4", "n"],
 };
 
 // 类型定义

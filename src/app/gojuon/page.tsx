@@ -1,6 +1,6 @@
 "use client";
 
-import { GOJUON_DATA, GOJUON_ROWS, GojuonData } from "@/data/gojuon";
+import { GOJUON_DATA, GOJUON_ROWS } from "@/data/gojuon";
 import Link from "next/link";
 
 // 添加类型
@@ -49,22 +49,30 @@ export default function GojuonChart() {
                   {sounds.map((sound) => (
                     <td
                       key={sound}
-                      className="border p-2 dark:border-gray-600 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
-                      onClick={() =>
-                        speak(GOJUON_DATA[sound as GojuonSound].hiragana)
-                      }
+                      className={`border p-2 dark:border-gray-600 ${
+                        GOJUON_DATA[sound as GojuonSound]
+                          ? "cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+                          : ""
+                      }`}
+                      onClick={() => {
+                        if (GOJUON_DATA[sound as GojuonSound]) {
+                          speak(GOJUON_DATA[sound as GojuonSound].hiragana);
+                        }
+                      }}
                     >
-                      <div className="text-center">
-                        <div className="text-2xl mb-1">
-                          {GOJUON_DATA[sound as GojuonSound].hiragana}
+                      {GOJUON_DATA[sound as GojuonSound] && (
+                        <div className="text-center">
+                          <div className="text-2xl mb-1">
+                            {GOJUON_DATA[sound as GojuonSound].hiragana}
+                          </div>
+                          <div className="text-xl mb-1">
+                            {GOJUON_DATA[sound as GojuonSound].katakana}
+                          </div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
+                            {GOJUON_DATA[sound as GojuonSound].romaji}
+                          </div>
                         </div>
-                        <div className="text-xl mb-1">
-                          {GOJUON_DATA[sound as GojuonSound].katakana}
-                        </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                          {GOJUON_DATA[sound as GojuonSound].romaji}
-                        </div>
-                      </div>
+                      )}
                     </td>
                   ))}
                 </tr>

@@ -77,16 +77,25 @@ export default function Home() {
         </div>
 
         {/* 开始练习按钮 */}
-        <button
-          onClick={startPractice}
-          className="mb-8 px-6 py-3 bg-green-500 text-white rounded hover:bg-green-600"
-          disabled={selectedRows.length === 0}
-        >
-          开始练习
-        </button>
+        <div className="flex gap-2 mb-8">
+          <button
+            onClick={startPractice}
+            className="px-6 py-3 bg-green-500 text-white rounded hover:bg-green-600"
+            disabled={selectedRows.length === 0}
+          >
+            开始练习
+          </button>
+          <button
+            onClick={() => setRevealedCards(new Set(shuffledSounds))}
+            className="px-6 py-3 bg-blue-500 text-white rounded hover:bg-blue-600"
+            disabled={shuffledSounds.length === 0}
+          >
+            全部翻开
+          </button>
+        </div>
 
         {/* 练习区域 */}
-        <div className="grid grid-cols-3 sm:grid-cols-5 gap-4">
+        <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
           {shuffledSounds.map((sound) => (
             <div
               key={sound}
@@ -95,14 +104,14 @@ export default function Home() {
             >
               {revealedCards.has(sound) ? (
                 <div className="text-center">
-                  <div className="text-2xl">{GOJUON_DATA[sound].hiragana}</div>
-                  <div className="text-xl">{GOJUON_DATA[sound].katakana}</div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  <div className="text-lg">{GOJUON_DATA[sound].hiragana}</div>
+                  <div className="text-lg">{GOJUON_DATA[sound].katakana}</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
                     {GOJUON_DATA[sound].romaji}
                   </div>
                 </div>
               ) : (
-                <div className="text-xl">{GOJUON_DATA[sound].romaji}</div>
+                <div className="text-base">{GOJUON_DATA[sound].romaji}</div>
               )}
             </div>
           ))}
