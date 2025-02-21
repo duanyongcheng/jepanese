@@ -10,8 +10,9 @@ export default function GojuonChart() {
   // 获取所有行
   const rows = Object.entries(GOJUON_ROWS);
 
-  const speak = (hiragana: string) => {
-    const audio = new Audio(`/audio/${hiragana}.mp3`);
+  const speak = (sound: GojuonSound) => {
+    if (!GOJUON_DATA[sound]?.audio) return;
+    const audio = new Audio(GOJUON_DATA[sound].audio);
     audio.play().catch((err) => console.error("Error playing audio:", err));
   };
 
@@ -56,7 +57,7 @@ export default function GojuonChart() {
                       }`}
                       onClick={() => {
                         if (GOJUON_DATA[sound as GojuonSound]) {
-                          speak(GOJUON_DATA[sound as GojuonSound].hiragana);
+                          speak(sound as GojuonSound);
                         }
                       }}
                     >

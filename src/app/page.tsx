@@ -10,8 +10,8 @@ type GojuonSound = keyof typeof GOJUON_DATA;
 
 // 修改发音函数
 const speak = (sound: GojuonSound) => {
-  const hiragana = GOJUON_DATA[sound].hiragana;
-  const audio = new Audio(`/audio/${hiragana}.mp3`);
+  if (!GOJUON_DATA[sound]?.audio) return;
+  const audio = new Audio(GOJUON_DATA[sound].audio);
   audio.play().catch((err) => console.error("Error playing audio:", err));
 };
 
@@ -104,14 +104,20 @@ export default function Home() {
             >
               {revealedCards.has(sound) ? (
                 <div className="text-center">
-                  <div className="text-lg">{GOJUON_DATA[sound].hiragana}</div>
-                  <div className="text-lg">{GOJUON_DATA[sound].katakana}</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">
-                    {GOJUON_DATA[sound].romaji}
-                  </div>
+                  {GOJUON_DATA[sound] && (
+                    <>
+                      <div className="text-lg">{GOJUON_DATA[sound].hiragana}</div>
+                      <div className="text-lg">{GOJUON_DATA[sound].katakana}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                        {GOJUON_DATA[sound].romaji}
+                      </div>
+                    </>
+                  )}
                 </div>
               ) : (
-                <div className="text-base">{GOJUON_DATA[sound].romaji}</div>
+                <div className="text-base">
+                  {GOJUON_DATA[sound]?.romaji}
+                </div>
               )}
             </div>
           ))}
