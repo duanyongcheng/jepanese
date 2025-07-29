@@ -8,12 +8,6 @@ import Link from "next/link";
 type GojuonRow = keyof typeof GOJUON_ROWS;
 type GojuonSound = keyof typeof GOJUON_DATA;
 
-// 修改发音函数
-const speak = (sound: GojuonSound) => {
-  if (!GOJUON_DATA[sound]?.audio) return;
-  const audio = new Audio(GOJUON_DATA[sound].audio);
-  audio.play().catch((err) => console.error("Error playing audio:", err));
-};
 
 export default function Home() {
   const [selectedRows, setSelectedRows] = useState<GojuonRow[]>([]);
@@ -38,13 +32,8 @@ export default function Home() {
 
   // 修改卡片点击处理函数
   const revealCard = (sound: GojuonSound) => {
-    if (revealedCards.has(sound)) {
-      // 如果卡片已经翻开，则播放发音
-      speak(sound);
-    } else {
-      // 否则翻开卡片
-      setRevealedCards((prev) => new Set(prev).add(sound));
-    }
+    // 翻开卡片
+    setRevealedCards((prev) => new Set(prev).add(sound));
   };
 
   return (
