@@ -23,24 +23,9 @@ const countByStatus = (progress: LearningProgress | null, status: KanaStatus): n
 }
 
 export const ProgressDashboard: React.FC = () => {
-  const { progress } = useProgress();
-  
-  // The getStats and getStreakInfo functions are not yet implemented in the hook,
-  // so we'll use some placeholder data for now.
-  const stats = {
-    achievements: {
-      totalKanaMastered: progress ? countByStatus(progress, 'mastered') : 0,
-    },
-    timeSpent: {
-      today: 0,
-    }
-  };
-
-  const streak = {
-    current: 0,
-    longest: 0,
-    hoursUntilBreak: 24,
-  };
+  const { progress, getStats, getStreakInfo } = useProgress();
+  const stats = getStats();
+  const streak = getStreakInfo();
   
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4">

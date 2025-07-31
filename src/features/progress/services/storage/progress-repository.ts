@@ -1,14 +1,5 @@
-import { LearningProgress } from '../types/progress';
+import { LearningProgress, IProgressRepository } from '../../types/progress';
 import * as LZString from 'lz-string';
-
-// src/services/storage/progress-repository.ts
-export interface IProgressRepository {
-  save(progress: LearningProgress): Promise<void>;
-  load(): Promise<LearningProgress | null>;
-  migrate(oldVersion: string, data: any): LearningProgress;
-  export(): Promise<string>;
-  import(data: string): Promise<boolean>;
-}
 
 export class LocalStorageRepository implements IProgressRepository {
   private readonly STORAGE_KEY = 'kana-learning-progress-v2';

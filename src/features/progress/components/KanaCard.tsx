@@ -1,5 +1,6 @@
 import React from 'react';
 import { KanaItem } from '../types/progress';
+import { GOJUON_DATA } from '@/data/gojuon';
 
 interface KanaCardProps {
   kana: string;
@@ -16,8 +17,30 @@ const ConfidenceIndicator = ({ value }: { value: number }) => (
 const DueIndicator = ({ date }: { date: string }) => (
   <div className="w-4 h-4 rounded-full bg-red-500" />
 );
-const RevealedContent = ({ kana }: { kana: string }) => <div>{kana}</div>;
-const HiddenContent = ({ kana }: { kana: string }) => <div>?</div>;
+
+const RevealedContent = ({ kana }: { kana: string }) => {
+  const kanaData = GOJUON_DATA[kana as keyof typeof GOJUON_DATA];
+  if (!kanaData) return <div>{kana}</div>;
+  
+  return (
+    <div className="text-center">
+      <div className="text-lg">{kanaData.hiragana}</div>
+      <div className="text-lg">{kanaData.katakana}</div>
+      <div className="text-xs text-gray-500 dark:text-gray-400">
+        {kanaData.romaji}
+      </div>
+    </div>
+  );
+};
+
+const HiddenContent = ({ kana }: { kana: string }) => {
+  const kanaData = GOJUON_DATA[kana as keyof typeof GOJUON_DATA];
+  return (
+    <div className="text-base">
+      {kanaData?.romaji || kana}
+    </div>
+  );
+};
 
 export const KanaCard: React.FC<KanaCardProps> = ({ 
   kana, 

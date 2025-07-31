@@ -1,31 +1,18 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { LearningProgress, KanaStatus, KanaItem, UserProfile } from '../types/progress';
+import { 
+  LearningProgress, 
+  KanaStatus, 
+  KanaItem, 
+  UserProfile, 
+  UseProgressReturn,
+  ProgressAction,
+  LearningStats,
+  StreakInfo
+} from '../types/progress';
 import { SpacedRepetition } from '../utils/spaced-repetition';
 import { LocalStorageRepository } from '../services/storage/progress-repository';
+import { createDefaultProgress } from '../utils/default-progress';
 import { GOJUON_ROWS, GOJUON_DATA } from '@/data/gojuon';
-
-// A placeholder for a more robust action type definition in the future
-export type ProgressAction = { type: 'correct' | 'incorrect' };
-
-export interface UseProgressReturn {
-  // 数据
-  progress: LearningProgress | null;
-  isLoading: boolean;
-  error: Error | null;
-  
-  // 操作
-  updateKanaProgress: (kanaKey: string, action: ProgressAction) => void;
-  getKanaStatus: (kanaKey: string) => KanaStatus;
-  getRecommendations: (rowKeys: string[]) => string[];
-  
-  // 统计 (placeholders for now)
-  // getStats: () => LearningStats;
-  // getStreakInfo: () => StreakInfo;
-  
-  // 设置
-  updatePreferences: (prefs: Partial<UserProfile['preferences']>) => void;
-  resetProgress: (kanaKeys?: string[]) => void;
-}
 
 export function useProgress(): UseProgressReturn {
   const [progress, setProgress] = useState<LearningProgress | null>(null);
@@ -36,10 +23,26 @@ export function useProgress(): UseProgressReturn {
   useEffect(() => {
     const loadProgress = async () => {
       try {
-        const loadedProgress = await repository.load();
+        let loadedProgress = await repository.load();
+        
+        // 如果没有找到进度数据，创建默认数据
+        if (!loadedProgress) {
+          loadedProgress = createDefaultProgress();
+          await repository.save(loadedProgress);
+        }
+        
         setProgress(loadedProgress);
       } catch (err) {
         setError(err as Error);
+        
+        // 如果加载失败，也创建默认数据
+        try {
+          const defaultProgress = createDefaultProgress();
+          await repository.save(defaultProgress);
+          setProgress(defaultProgress);
+        } catch (fallbackErr) {
+          console.error('Failed to create default progress:', fallbackErr);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -71,35 +74,70 @@ export function useProgress(): UseProgressReturn {
       };
     }
 
-    // Update general stats
-    currentItem.exposures += 1;
-    currentItem.interactions += 1;
-    currentItem.lastSeen = now.toISOString();
+    // Handle different action types
+    switch (action.type) {
+      case 'expose':
+        currentItem.exposures += 1;
+        currentItem.lastSeen = now.toISOString();
+        break;
+        
+      case 'interact':
+        currentItem.exposures += 1;
+        currentItem.interactions += 1;
+        currentItem.lastSeen = now.toISOString();
+        
+        // Update SRS data based on quality
+        const quality = action.quality;
+        const { interval, easeFactor } = srs.calculateNextReview(currentItem, quality);
+        currentItem.interval = interval;
+        currentItem.easeFactor = easeFactor;
+        
+        const nextReviewDate = new Date(now);
+        nextReviewDate.setDate(now.getDate() + interval);
+        currentItem.nextReview = nextReviewDate.toISOString();
 
-    // Determine quality of review (0-5)
-    const quality = action.type === 'correct' ? 4 : 1; // Simplified: 4 for correct, 1 for incorrect
-
-    // Update SRS data
-    const { interval, easeFactor } = srs.calculateNextReview(currentItem, quality);
-    currentItem.interval = interval;
-    currentItem.easeFactor = easeFactor;
-    
-    const nextReviewDate = new Date(now);
-    nextReviewDate.setDate(now.getDate() + interval);
-    currentItem.nextReview = nextReviewDate.toISOString();
-
-    // Update confidence and status
-    if (action.type === 'correct') {
-      currentItem.confidence = Math.min(1, currentItem.confidence + 0.1);
-      if (currentItem.confidence >= 0.8 && currentItem.interval > 30) { // Example threshold for 'mastered'
-        currentItem.status = 'mastered';
-        currentItem.lastMastered = now.toISOString();
-      } else {
-        currentItem.status = 'reviewing';
-      }
-    } else {
-      currentItem.confidence = Math.max(0, currentItem.confidence - 0.2);
-      currentItem.status = 'learning';
+        // Update confidence and status based on quality
+        if (quality >= 3) {
+          currentItem.confidence = Math.min(1, currentItem.confidence + 0.1);
+          if (currentItem.confidence >= 0.8 && currentItem.interval > 30) {
+            currentItem.status = 'mastered';
+            currentItem.lastMastered = now.toISOString();
+          } else {
+            currentItem.status = 'reviewing';
+          }
+        } else {
+          currentItem.confidence = Math.max(0, currentItem.confidence - 0.2);
+          currentItem.status = 'learning';
+        }
+        break;
+        
+      case 'reset':
+        currentItem = {
+          exposures: 0,
+          interactions: 0,
+          confidence: 0,
+          retention: 0,
+          firstSeen: now.toISOString(),
+          lastSeen: now.toISOString(),
+          status: 'new',
+          difficulty: 0.5,
+          interval: 0,
+          easeFactor: 2.5,
+        };
+        break;
+        
+      case 'suspend':
+        currentItem.status = 'suspended';
+        break;
+        
+      case 'resume':
+        if (currentItem.status === 'suspended') {
+          currentItem.status = currentItem.confidence > 0.5 ? 'reviewing' : 'learning';
+        }
+        break;
+        
+      default:
+        break;
     }
 
     // Create new progress object
@@ -177,15 +215,99 @@ export function useProgress(): UseProgressReturn {
       .map(item => item.kana);
   }, [progress, calculatePriority]);
 
-  const updatePreferences = useCallback((prefs: Partial<UserProfile['preferences']>) => {
-    // This will be implemented later
-    console.log("Updating preferences with", prefs);
-  }, []);
+  const getStats = useCallback((): LearningStats => {
+    if (!progress) {
+      return {
+        sessions: {
+          total: 0,
+          currentStreak: 0,
+          longestStreak: 0,
+          lastSessionDate: '',
+        },
+        timeSpent: {
+          total: 0,
+          today: 0,
+          thisWeek: 0,
+          average: 0,
+        },
+        achievements: {
+          totalKanaMastered: 0,
+          totalReviews: 0,
+          perfectDays: 0,
+          milestones: [],
+        },
+      };
+    }
+    return progress.statistics;
+  }, [progress]);
 
-  const resetProgress = useCallback((kanaKeys?: string[]) => {
-    // This will be implemented later
-    console.log("Resetting progress for", kanaKeys);
-  }, []);
+  const getStreakInfo = useCallback((): StreakInfo => {
+    const stats = getStats();
+    const now = new Date();
+    const lastSession = stats.sessions.lastSessionDate ? new Date(stats.sessions.lastSessionDate) : null;
+    
+    let hoursUntilBreak = 24;
+    let willBreakToday = false;
+    
+    if (lastSession) {
+      const timeDiff = now.getTime() - lastSession.getTime();
+      const hoursDiff = timeDiff / (1000 * 60 * 60);
+      hoursUntilBreak = Math.max(0, 24 - hoursDiff);
+      willBreakToday = hoursDiff > 24;
+    }
+    
+    return {
+      current: stats.sessions.currentStreak,
+      longest: stats.sessions.longestStreak,
+      hoursUntilBreak,
+      willBreakToday,
+    };
+  }, [getStats]);
+
+  const updatePreferences = useCallback(async (prefs: Partial<UserProfile['preferences']>) => {
+    if (!progress) return;
+    
+    const newProgress: LearningProgress = {
+      ...progress,
+      profile: {
+        ...progress.profile,
+        preferences: {
+          ...progress.profile.preferences,
+          ...prefs,
+        },
+      },
+    };
+    
+    try {
+      await repository.save(newProgress);
+      setProgress(newProgress);
+    } catch (err) {
+      setError(err as Error);
+    }
+  }, [progress, repository]);
+
+  const resetProgress = useCallback(async (kanaKeys?: string[]) => {
+    if (!progress) return;
+    
+    const newKanaProgress = { ...progress.kanaProgress };
+    const keysToReset = kanaKeys || Object.keys(newKanaProgress);
+    
+    keysToReset.forEach(key => {
+      delete newKanaProgress[key];
+    });
+    
+    const newProgress: LearningProgress = {
+      ...progress,
+      kanaProgress: newKanaProgress,
+    };
+    
+    try {
+      await repository.save(newProgress);
+      setProgress(newProgress);
+    } catch (err) {
+      setError(err as Error);
+    }
+  }, [progress, repository]);
   
   return {
     progress,
@@ -194,6 +316,8 @@ export function useProgress(): UseProgressReturn {
     updateKanaProgress,
     getKanaStatus,
     getRecommendations,
+    getStats,
+    getStreakInfo,
     updatePreferences,
     resetProgress
   };
