@@ -141,7 +141,7 @@ export interface UseProgressReturn {
 export interface IProgressRepository {
   save(progress: LearningProgress): Promise<void>;
   load(): Promise<LearningProgress | null>;
-  migrate(oldVersion: string, data: any): LearningProgress;
+  migrate(oldVersion: string, data: Record<string, unknown>): LearningProgress;
   export(): Promise<string>;
   import(data: string): Promise<boolean>;
 }

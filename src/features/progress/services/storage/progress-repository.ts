@@ -57,11 +57,11 @@ export class LocalStorageRepository implements IProgressRepository {
   }
 
   // This is a placeholder for a future, more robust migration system.
-  migrate(oldVersion: string, data: any): LearningProgress {
+  migrate(oldVersion: string, data: Record<string, unknown>): LearningProgress {
     console.log(`Migrating data from version ${oldVersion}...`);
     // For now, we'll just assume the data is compatible.
     // In a real-world scenario, you would have specific logic for each version.
-    return data as LearningProgress;
+    return data as unknown as LearningProgress;
   }
 
   async export(): Promise<string> {

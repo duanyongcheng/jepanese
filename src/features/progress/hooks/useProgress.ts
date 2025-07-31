@@ -7,12 +7,13 @@ import {
   UseProgressReturn,
   ProgressAction,
   LearningStats,
-  StreakInfo
+  StreakInfo,
+  Milestone
 } from '../types/progress';
 import { SpacedRepetition } from '../utils/spaced-repetition';
 import { LocalStorageRepository } from '../services/storage/progress-repository';
 import { createDefaultProgress } from '../utils/default-progress';
-import { GOJUON_ROWS, GOJUON_DATA } from '@/data/gojuon';
+import { GOJUON_ROWS } from '@/data/gojuon';
 
 export function useProgress(): UseProgressReturn {
   const [progress, setProgress] = useState<LearningProgress | null>(null);
@@ -51,12 +52,98 @@ export function useProgress(): UseProgressReturn {
     loadProgress();
   }, [repository]);
 
+  // Check and add milestones based on progress changes
+  const checkAndAddMilestones = useCallback((
+    progressData: LearningProgress,
+    kanaKey: string,
+    oldStatus: KanaStatus | undefined,
+    newStatus: KanaStatus
+  ): LearningProgress => {
+    const now = new Date();
+    const newMilestones: Milestone[] = [];
+    
+    // Check for kana mastery milestone
+    if (newStatus === 'mastered' && oldStatus !== 'mastered') {
+      const masteredCount = Object.values(progressData.kanaProgress).filter(
+        item => item.status === 'mastered'
+      ).length;
+      
+      // Check milestone thresholds (5, 10, 20, 30, 40, 46)
+      const milestones = [5, 10, 20, 30, 40, 46];
+      for (const threshold of milestones) {
+        if (masteredCount === threshold) {
+          newMilestones.push({
+            type: 'kana_mastered',
+            value: threshold,
+            achievedAt: now.toISOString(),
+            celebrated: false
+          });
+        }
+      }
+    }
+
+    // Check for streak milestones
+    const streak = progressData.statistics.sessions.currentStreak;
+    if (streak >= 3 && streak <= 30) {
+      const streakMilestones = [3, 7, 14, 21, 30];
+      const existingStreakMilestones = progressData.statistics.achievements.milestones.filter(
+        m => m.type === 'streak' && m.value === streak
+      );
+      
+      if (streakMilestones.includes(streak) && existingStreakMilestones.length === 0) {
+        newMilestones.push({
+          type: 'streak',
+          value: streak,
+          achievedAt: now.toISOString(),
+          celebrated: false
+        });
+      }
+    }
+
+    // Check for total reviews milestone
+    const totalReviews = progressData.statistics.achievements.totalReviews;
+    if (totalReviews > 0 && totalReviews % 50 === 0) {
+      const existingReviewMilestones = progressData.statistics.achievements.milestones.filter(
+        m => m.type === 'total_reviews' && m.value === totalReviews
+      );
+      
+      if (existingReviewMilestones.length === 0) {
+        newMilestones.push({
+          type: 'total_reviews',
+          value: totalReviews,
+          achievedAt: now.toISOString(),
+          celebrated: false
+        });
+      }
+    }
+
+    // Add new milestones to progress
+    if (newMilestones.length > 0) {
+      return {
+        ...progressData,
+        statistics: {
+          ...progressData.statistics,
+          achievements: {
+            ...progressData.statistics.achievements,
+            milestones: [
+              ...progressData.statistics.achievements.milestones,
+              ...newMilestones
+            ]
+          }
+        }
+      };
+    }
+
+    return progressData;
+  }, []);
+
   const updateKanaProgress = useCallback(async (kanaKey: string, action: ProgressAction) => {
     if (!progress) return;
 
     const now = new Date();
     const srs = new SpacedRepetition();
     let currentItem = progress.kanaProgress[kanaKey];
+    const oldStatus = currentItem?.status;
 
     // Initialize item if it's new
     if (!currentItem) {
@@ -153,14 +240,18 @@ export function useProgress(): UseProgressReturn {
       }
     };
 
+    // Check for milestones and update statistics
+    const newProgressWithMilestones = checkAndAddMilestones(newProgress, kanaKey, oldStatus, currentItem.status);
+
     // Save and update state
     try {
-      await repository.save(newProgress);
-      setProgress(newProgress);
+      await repository.save(newProgressWithMilestones);
+      setProgress(newProgressWithMilestones);
     } catch (err) {
       setError(err as Error);
     }
-  }, [progress, repository]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [progress, repository, checkAndAddMilestones]);
 
   const getKanaStatus = useCallback((kanaKey: string): KanaStatus => {
     return progress?.kanaProgress[kanaKey]?.status || 'new';

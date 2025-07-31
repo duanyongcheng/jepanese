@@ -14,7 +14,7 @@ interface KanaCardProps {
 const ConfidenceIndicator = ({ value }: { value: number }) => (
   <div className="w-4 h-4 rounded-full bg-blue-500" style={{ opacity: value }} />
 );
-const DueIndicator = ({ date }: { date: string }) => (
+const DueIndicator = () => (
   <div className="w-4 h-4 rounded-full bg-red-500" />
 );
 
@@ -49,7 +49,7 @@ export const KanaCard: React.FC<KanaCardProps> = ({
   revealed,
   showProgressIndicator 
 }) => {
-  const { status, confidence } = progress || { status: 'new', confidence: 0 };
+  const { status } = progress || { status: 'new', confidence: 0 };
   
   const getCardStyle = () => {
     const baseStyle = "aspect-square border-2 rounded-lg transition-all duration-200 cursor-pointer flex items-center justify-center text-4xl font-bold relative";
@@ -73,7 +73,7 @@ export const KanaCard: React.FC<KanaCardProps> = ({
     return (
       <div className="absolute top-1 right-1 flex space-x-1">
         {progress.confidence > 0 && <ConfidenceIndicator value={progress.confidence} />}
-        {progress.nextReview && new Date(progress.nextReview) < new Date() && <DueIndicator date={progress.nextReview} />}
+        {progress.nextReview && new Date(progress.nextReview) < new Date() && <DueIndicator />}
       </div>
     );
   };

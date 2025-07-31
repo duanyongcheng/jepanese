@@ -5,6 +5,9 @@ import { GOJUON_DATA, GOJUON_ROWS } from "@/data/gojuon";
 import { useProgress } from "@/features/progress/hooks/useProgress";
 import { KanaCard } from "@/features/progress/components/KanaCard";
 import { ProgressDashboard } from "@/features/progress/components/Dashboard";
+import { StreakProtection } from "@/features/progress/components/StreakProtection";
+import { ReminderSystem } from "@/features/progress/components/ReminderSystem";
+import { LevelUpSystem } from "@/features/progress/components/LevelUpSystem";
 import Link from "next/link";
 
 // Add this type near the top of the file
@@ -27,7 +30,7 @@ export default function Home() {
   const [practiceType, setPracticeType] = useState<'kana-to-romaji' | 'romaji-to-kana'>('kana-to-romaji');
 
   // 使用进度追踪系统
-  const { progress, updateKanaProgress, getKanaStatus, getRecommendations, isLoading } = useProgress();
+  const { progress, updateKanaProgress, getRecommendations } = useProgress();
 
   // 获取选中行的所有音（按正常顺序）
   const getSelectedSounds = () => {
@@ -65,7 +68,7 @@ export default function Home() {
         getSelectedSounds() 
       : [];
     
-    setPracticeQueue(shuffleArray(sounds));
+    setPracticeQueue(shuffleArray(sounds) as GojuonSound[]);
     setCurrentKanaIndex(0);
     setUserInput('');
     setHiraganaInput('');
@@ -438,6 +441,11 @@ export default function Home() {
           </div>
         )}
       </main>
+      
+      {/* Global Achievement Components */}
+      <StreakProtection />
+      <ReminderSystem />
+      <LevelUpSystem />
     </div>
   );
 }
